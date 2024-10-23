@@ -1,0 +1,110 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    <title>Google Sheets Iframe</title>
+    <style>
+        body {
+            font-family: "Space Grotesk", sans-serif;
+            margin: 20px;
+        }
+        .same {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        iframe {
+            border: 1px solid #000;
+            width: 100%;
+            min-height: 800px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Google Sheets Viewer and Change Detector</h1>
+    <p id="status" class="same">Checking For Changes...</p>
+    <p id="Time" class="same">Last Time Updated: NA</p>
+    
+    <iframe src="https://docs.google.com/spreadsheets/d/1GWPbMf9xlSRS7oF9zkSZmkrI9qBYc_Z2hW5ZlASMxO0/edit?usp=sharing"></iframe>
+
+<script>
+const apiKey = 'AIzaSyAH1_qh1HqAYbdu8RW3__amdcmN0hOvkBc'; // Replace with your Google Sheets API key
+const spreadsheetId = '1GWPbMf9xlSRS7oF9zkSZmkrI9qBYc_Z2hW5ZlASMxO0'; // Your Spreadsheet ID
+const rangeH3 = 'Sheet1!H3'; // Target cell H3
+
+let previousH3Data = ''; // Store previous data for H3
+
+
+    
+// Function to fetch data from the Google Sheet
+async function fetchSheetData(range) {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
+    const data = await response.json();
+    return data.values ? data.values[0][0] : ''; // Return the value of the specified cell
+}
+
+function getCurrentTimeInGMTPlus6() {
+
+   const now = new Date();
+    const gmtOffset = 6 * 60 * 60 * 1000; // +6 hours in milliseconds
+    const gmtTime = new Date(now.getTime() + gmtOffset);
+    return gmtTime.toLocaleString(); // Format it as a string
+}
+
+    
+// Function to check for changes in the cells
+async function checkForChanges() {
+
+const currentH3Data = await fetchSheetData(rangeH3);
+
+
+    
+    if (previousH3Data === '') {
+        // First time fetching data, just store it
+        previousH3Data = currentH3Data;
+        document.getElementById('status').textContent = 'Monitoring changes...';
+    } 
+    else {
+        let message = '';
+        let changeTime='';
+        
+        // Compare current data with previous data for H3
+        if (currentH3Data !== previousH3Data) {
+            changeTime= getCurrentTimeInGMTPlus6();
+            message += 'Change detected in cell H3! ';
+            previousH3Data = currentH3Data; // Update the previous data for H3
+            document.getElementById('Time').textContent= 'Last Change in H3 at: ${changeTime} GMT +6';
+        }
+        // Update the status message in the HTML
+        if (message === '') {
+            document.getElementById('status').textContent = 'No changes detected.';
+        } else {
+            document.getElementById('status').textContent = message;
+        }
+
+    setTimeout(()=>{
+        document.getElementById('status').textContent = 'Checking For Changes...';
+
+    if(message === 'No changes detected.'){
+    document.getElementById('Time').textContent= '';
+    }
+    },4000);
+        
+    }
+
+}
+
+
+// Check for changes every 10 seconds (you can adjust this interval)
+setInterval(checkForChanges, 10000);
+
+    </script>
+</body>
+</html>
