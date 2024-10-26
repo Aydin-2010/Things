@@ -383,7 +383,7 @@ function saveLog(logType, logMessage) {
 // Call loadScanLogs on page load to populate logs
 loadScanLogs();
 
-function checkForChanges() {
+async function checkForChanges() {
     const currentH2Data = await fetchSheetData(DisneyStoreOrder01);
     const currentH3Data = await fetchSheetData(DisneyStoreOrder02);
     let message = "";
