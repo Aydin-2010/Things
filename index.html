@@ -282,7 +282,7 @@ function getFormattedTime() {
 }
 
 // Function to check for changes in the specified range
-async function checkForChanges() {
+/*async function checkForChanges() {
     
     const currentH2Data = await fetchSheetData(DisneyStoreOrder01);
     const currentH3Data = await fetchSheetData(DisneyStoreOrder02);
@@ -350,6 +350,102 @@ startProgressMeter();
 // Call the function every second to update the local time
 setInterval(displayLocalTime, 10);
 // Check for changes every 10 seconds (you can adjust this interval)
+setInterval(checkForChanges, 10000);*/
+// Access DOM elements
+const scanlog = document.getElementById("scanlog");
+const resultlog = document.getElementById("resultlog");
+
+// Load existing scan logs from localStorage on page load
+function loadScanLogs() {
+    const savedScanLogs = JSON.parse(localStorage.getItem("scanLogs")) || [];
+    const savedResultLogs = JSON.parse(localStorage.getItem("resultLogs")) || [];
+
+    savedScanLogs.forEach(log => {
+        const list = document.createElement("li");
+        list.textContent = log;
+        scanlog.appendChild(list);
+    });
+
+    savedResultLogs.forEach(log => {
+        const resultList = document.createElement("li");
+        resultList.textContent = log;
+        resultlog.appendChild(resultList);
+    });
+}
+
+// Save a new log entry to localStorage
+function saveLog(logType, logMessage) {
+    const logs = JSON.parse(localStorage.getItem(logType)) || [];
+    logs.push(logMessage);
+    localStorage.setItem(logType, JSON.stringify(logs));
+}
+
+// Call loadScanLogs on page load to populate logs
+loadScanLogs();
+
+function checkForChanges() {
+    const currentH2Data = await fetchSheetData(DisneyStoreOrder01);
+    const currentH3Data = await fetchSheetData(DisneyStoreOrder02);
+    let message = "";
+
+    if (currentH2Data === '' && currentH3Data === '') {
+        // First-time fetching data, just store it
+        previousH2Data = currentH2Data;
+        previousH3Data = currentH3Data;
+        status.textContent = 'Monitoring Changes...';
+    } else {
+        // Compare current data with previous data
+        if (currentH2Data !== previousH2Data && currentH3Data !== previousH3Data) {
+            status.textContent = 'Change Detected at H2 & H3!';
+            message = "Change Detected at H2 & H3!";
+            timeElement.textContent = `Last Time Updated: ${getFormattedTime()}`;
+            previousH2Data = currentH2Data;
+            previousH3Data = currentH3Data;
+        } else if (currentH2Data !== previousH2Data) {
+            status.textContent = 'Change Detected at H2!';
+            message = "Change Detected at H2!";
+            timeElement.textContent = `Last Time Updated: ${getFormattedTime()}`;
+            previousH2Data = currentH2Data;
+        } else if (currentH3Data !== previousH3Data) {
+            status.textContent = 'Change Detected at H3!';
+            message = "Change Detected at H3!";
+            timeElement.textContent = `Last Time Updated: ${getFormattedTime()}`;
+            previousH3Data = currentH3Data;
+        } else {
+            status.textContent = 'No Changes Detected.';
+            message = "No Changes Detected";
+            timeElement.textContent = `Last Scanned: ${getFormattedTime()}`;
+        }
+    }
+
+    // Add logs to lists and localStorage
+    const scanTimeLog = `Scanning Completed at ${getFormattedTime()}`;
+    const resultLogMessage = `Scanning Result: ${message} (Scan Time ${getFormattedTime()})`;
+    
+    const scanListItem = document.createElement("li");
+    scanListItem.textContent = scanTimeLog;
+    scanlog.appendChild(scanListItem);
+    saveLog("scanLogs", scanTimeLog);
+
+    const resultListItem = document.createElement("li");
+    resultListItem.textContent = resultLogMessage;
+    resultlog.appendChild(resultListItem);
+    saveLog("resultLogs", resultLogMessage);
+
+    scrollToBottom("lastResult");
+    scrollToBottom("lastScanned");
+
+    stopEllipsisAnimation();
+    resetProgressMeter();
+    setTimeout(() => {
+        startEllipsisAnimation();
+        startProgressMeter();
+    }, 3000);
+}
+
+startEllipsisAnimation();
+startProgressMeter();
+setInterval(displayLocalTime, 10);
 setInterval(checkForChanges, 10000);
     
 </script>
